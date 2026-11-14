@@ -15,7 +15,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import type { AppSettings, HardwareInfo } from '../../types';
-import { getSavedSettings, saveSettings, DEFAULT_SETTINGS } from '../../services/api';
+import { getSavedSettings, saveSettings, DEFAULT_SETTINGS, getAvailableModels } from '../../services/api';
 
 interface SettingsViewProps {
   hardware?: HardwareInfo | null;
@@ -30,6 +30,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [testStatus, setTestStatus] = useState<{ ok: boolean; message: string } | null>(null);
   const [isTesting, setIsTesting] = useState(false);
+  const [detectedModels, setDetectedModels] = useState<string[]>([]);
+
+  React.useEffect(() => {
+    getAvailableModels().then((data) => {
+      if (data?.available_models) setDetectedModels(data.available_models);
+    }).catch(() => {});
+  }, []);
 
   const handleTestInference = async () => {
     setIsTesting(true);
@@ -734,6 +741,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               placeholder="Qwen/Qwen2.5-3B-Instruct"
               className="w-full bg-surface-base border border-surface-border rounded px-3 py-1.5 text-xs font-mono text-ink-primary focus:outline-none focus:border-ink-faint"
             />
+            {detectedModels.length > 0 && (
+              <div className="pt-1.5 flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] text-ink-muted font-mono uppercase">Detected on local node:</span>
+                {detectedModels.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => handleChange('active_model_name', m)}
+                    className={`px-2 py-0.5 rounded text-[11px] font-mono border transition-colors cursor-pointer ${
+                      settings.active_model_name === m
+                        ? 'bg-signal-green/20 border-signal-green text-signal-green font-bold'
+                        : 'bg-surface-base border-surface-border text-ink-secondary hover:text-ink-primary'
+                    }`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            )}
             <p className="text-[11px] text-ink-muted">
               Must match the model loaded in vLLM or Ollama on the local machine or air-gapped node.
             </p>

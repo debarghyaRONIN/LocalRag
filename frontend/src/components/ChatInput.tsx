@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowUp, Square, SlidersHorizontal, ChevronUp, ChevronDown, Paperclip, X, FileText } from 'lucide-react';
+import { ArrowUp, Square, SlidersHorizontal, ChevronUp, ChevronDown, Paperclip, X, FileText, Cpu } from 'lucide-react';
 
 interface AttachedFile {
   file: File;
@@ -12,6 +12,9 @@ interface ChatInputProps {
   onStopStreaming: () => void;
   isStreaming: boolean;
   disabled?: boolean;
+  activeModel?: string;
+  onChangeModel?: (model: string) => void;
+  onOpenModelSelector?: () => void;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -19,6 +22,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onStopStreaming,
   isStreaming,
   disabled = false,
+  activeModel,
+  onChangeModel,
+  onOpenModelSelector,
 }) => {
   const [text, setText] = useState('');
   const [topK, setTopK] = useState(5);
@@ -125,6 +131,42 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               style={{ width: '80px', accentColor: 'var(--color-accent)' }}
             />
             <span style={{ fontWeight: 600, color: 'var(--color-accent)' }}>{minScore.toFixed(2)}</span>
+          </div>
+
+          {/* Active Model Custom Input Field */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: 'color-mix(in srgb, var(--color-text) 60%, transparent)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Cpu size={12} /> Model:
+            </span>
+            <input
+              type="text"
+              value={activeModel || ''}
+              onChange={(e) => onChangeModel?.(e.target.value)}
+              placeholder="e.g. llama3.2:latest"
+              style={{
+                background: 'var(--color-bg)',
+                border: '1px solid color-mix(in srgb, var(--color-text) 16%, transparent)',
+                borderRadius: '6px',
+                padding: '3px 8px',
+                fontSize: '11.5px',
+                fontFamily: 'monospace',
+                color: 'var(--color-accent)',
+                width: '140px',
+                outline: 'none',
+              }}
+              title="Type exact model name (e.g. llama3.2:latest, gemma4:latest)"
+            />
+            {onOpenModelSelector && (
+              <button
+                type="button"
+                onClick={onOpenModelSelector}
+                className="btn btn-ghost"
+                style={{ fontSize: '11px', padding: '2px 6px', color: 'var(--color-accent)' }}
+                title="Browse & select installed local models"
+              >
+                Browse...
+              </button>
+            )}
           </div>
 
           <div style={{ marginLeft: 'auto', fontSize: '11px', color: 'color-mix(in srgb, var(--color-text) 45%, transparent)' }}>

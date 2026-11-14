@@ -33,12 +33,14 @@ import {
   streamQuery,
   getIndexingJobs,
   getSavedSettings,
+  saveSettings,
   submitFeedback,
   uploadDocument,
 } from './services/api';
-import { Download, Sparkles, ChevronDown, ChevronUp, Copy, Check, RotateCcw } from 'lucide-react';
+import { Download, Sparkles, ChevronDown, ChevronUp, Copy, Check, RotateCcw, Cpu } from 'lucide-react';
 import { ChatInput } from './components/ChatInput';
 import { ArtifactPanel } from './components/ArtifactPanel';
+import { ModelSelectorModal } from './components/ModelSelectorModal';
 import type { ArtifactItem } from './types';
 
 export const App: React.FC = () => {
@@ -65,6 +67,22 @@ export const App: React.FC = () => {
   const [rightRailTab, setRightRailTab] = useState<'artifacts' | 'sources'>('sources');
   const [expandedThinking, setExpandedThinking] = useState<Record<string, boolean>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
+  const [activeModel, setActiveModel] = useState<string>(() => {
+    const saved = getSavedSettings();
+    return saved.active_model_name || 'llama3.2:latest';
+  });
+
+  const handleSelectModel = (newModel: string) => {
+    const clean = newModel.trim();
+    if (!clean) return;
+    setActiveModel(clean);
+    setAppSettings((prev) => {
+      const updated = { ...prev, active_model_name: clean };
+      saveSettings(updated);
+      return updated;
+    });
+  };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -81,6 +99,9 @@ export const App: React.FC = () => {
     try {
       const data = await getHealth();
       setHealth(data);
+      if (data.vllm_model && activeModel === 'Qwen/Qwen2.5-3B-Instruct') {
+        setActiveModel(data.vllm_model);
+      }
       setBackendError((prev) => {
         if (prev !== null) {
           // Recovering from error: reload components that may have failed on startup
@@ -308,6 +329,7 @@ export const App: React.FC = () => {
       topK: effectiveTopK,
       minRerankScore: effectiveMinScore,
       userClearance: userClearance,
+      model: activeModel || appSettings?.active_model_name,
       signal: controller.signal,
       onToken: (token) => {
         accumulatedText += token;
@@ -428,6 +450,8 @@ export const App: React.FC = () => {
           activeView={activeView}
           onChangeView={(v) => setActiveView(v)}
           onOpenDocManager={() => setIsDocManagerOpen(true)}
+          activeModel={activeModel}
+          onOpenModelSelector={() => setIsModelSelectorOpen(true)}
           clearanceLevel={userClearance}
           onChangeClearance={(lvl) => setUserClearance(lvl)}
           operatorName={userName}
@@ -527,9 +551,24 @@ export const App: React.FC = () => {
                   <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 500, fontSize: '15px' }}>
                     {sessions.find((s) => s.session_id === activeSessionId)?.title || 'Knowledge Consultation'}
                   </span>
-                  <span className="tag tag-neutral">
-                    Model: {(health?.vllm_model || appSettings?.active_model_name || 'Qwen2.5-3B').split('/').pop()}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsModelSelectorOpen(true)}
+                    className="tag tag-neutral"
+                    style={{
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      border: '1px solid color-mix(in srgb, var(--color-accent) 35%, transparent)',
+                      background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
+                    }}
+                    title="Click to input or change active model"
+                  >
+                    <Cpu size={12} color="var(--color-accent)" />
+                    <span>Model: {(activeModel || health?.vllm_model || 'llama3.2:latest').split('/').pop()}</span>
+                    <ChevronDown size={11} />
+                  </button>
                   <span className="tag tag-neutral">
                     Sources: {documents && documents.length > 0 ? documents.map((d) => (d.filename || 'Doc').split('.')[0]).slice(0, 2).join(', ') : 'Empty corpus'}
                   </span>
@@ -923,6 +962,9 @@ export const App: React.FC = () => {
                   onSendMessage={handleSendMessage}
                   onStopStreaming={handleStopStreaming}
                   isStreaming={isStreaming}
+                  activeModel={activeModel}
+                  onChangeModel={handleSelectModel}
+                  onOpenModelSelector={() => setIsModelSelectorOpen(true)}
                 />
               </div>
 
@@ -1058,6 +1100,14 @@ export const App: React.FC = () => {
           onClose={() => setInspectedCitation(null)}
         />
       )}
+
+      {/* Model Selection & Custom Input Modal */}
+      <ModelSelectorModal
+        isOpen={isModelSelectorOpen}
+        onClose={() => setIsModelSelectorOpen(false)}
+        currentModel={activeModel}
+        onSelectModel={handleSelectModel}
+      />
     </div>
   );
 };

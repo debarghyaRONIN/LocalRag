@@ -1,4 +1,5 @@
 import React from 'react';
+import { Cpu, ChevronDown } from 'lucide-react';
 import type { SystemHealth, HardwareInfo, ActiveView } from '../types';
 
 interface HeaderProps {
@@ -7,6 +8,8 @@ interface HeaderProps {
   activeView?: ActiveView;
   onChangeView?: (view: ActiveView) => void;
   onOpenDocManager?: () => void;
+  activeModel?: string;
+  onOpenModelSelector?: () => void;
   clearanceLevel?: number;
   onChangeClearance?: (level: number) => void;
   operatorName?: string;
@@ -16,12 +19,16 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   health,
+  activeModel,
+  onOpenModelSelector,
   clearanceLevel = 4,
   onChangeClearance,
   operatorName = 'Dana Ruiz',
   stationId = 'WORKSTATION-01',
   nodeMode = 'localhost',
 }) => {
+  const displayModel = (activeModel || health?.vllm_model || 'Qwen2.5-3B').split('/').pop();
+
   return (
     <header
       style={{
@@ -44,9 +51,26 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Screen Sub-Heading */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span className="tag tag-neutral" style={{ fontSize: '11px' }}>
-          Model: {health?.vllm_model ? health.vllm_model.split('/').pop() : 'Qwen2.5-3B'}
-        </span>
+        <button
+          type="button"
+          onClick={onOpenModelSelector}
+          className="tag tag-neutral"
+          style={{
+            fontSize: '11px',
+            cursor: onOpenModelSelector ? 'pointer' : 'default',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            border: onOpenModelSelector ? '1px solid color-mix(in srgb, var(--color-accent) 40%, transparent)' : undefined,
+            background: onOpenModelSelector ? 'color-mix(in srgb, var(--color-accent) 12%, transparent)' : undefined,
+            color: 'var(--color-text)',
+          }}
+          title="Click to input or change active inference model"
+        >
+          <Cpu size={12} color="var(--color-accent)" />
+          <span>Model: {displayModel}</span>
+          {onOpenModelSelector && <ChevronDown size={11} />}
+        </button>
         <span className="tag tag-neutral" style={{ fontSize: '11px' }}>
           Node: {stationId}
         </span>

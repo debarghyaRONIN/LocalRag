@@ -83,6 +83,7 @@ class QueryRequest(BaseModel):
     user_departments: Optional[List[str]] = None
     top_k: int = 5
     min_rerank_score: Optional[float] = None
+    model: Optional[str] = None
     stream: bool = True
 
 

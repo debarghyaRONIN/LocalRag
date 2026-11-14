@@ -43,12 +43,12 @@ class VLLMClient:
 
     async def check_readiness(self) -> Dict[str, Any]:
         """
-        Verify that the local vLLM instance is online and accepting requests.
+        Verify that the local vLLM or Ollama instance is online and accepting requests.
         Returns model metadata and status.
         """
         try:
             client = self.get_client()
-            res = await client.get(f"{self.base_url}/models", timeout=3.0)
+            res = await client.get(f"{self.base_url}/models", timeout=2.0)
             if res.status_code == 200:
                 data = res.json()
                 models = [m.get("id") for m in data.get("data", [])]
@@ -57,14 +57,50 @@ class VLLMClient:
                     "active_models": models,
                     "primary_model": models[0] if models else self.model,
                 }
-        except Exception as e:
-            return {
-                "online": False,
-                "error": str(e),
-                "active_models": [],
-                "primary_model": self.model,
-            }
+        except Exception:
+            pass
+
+        # Probe Ollama directly
+        try:
+            client = self.get_client()
+            res = await client.get("http://localhost:11434/api/tags", timeout=2.0)
+            if res.status_code == 200:
+                models = [m.get("name") for m in res.json().get("models", []) if m.get("name")]
+                primary = models[0] if models else self.model
+                return {
+                    "online": True,
+                    "active_models": models,
+                    "primary_model": primary,
+                }
+        except Exception:
+            pass
+
         return {"online": False, "active_models": [], "primary_model": self.model}
+
+    async def get_available_models(self) -> List[str]:
+        """List all detected local models from Ollama and vLLM."""
+        models: List[str] = []
+        try:
+            client = self.get_client()
+            res = await client.get("http://localhost:11434/api/tags", timeout=2.0)
+            if res.status_code == 200:
+                for m in res.json().get("models", []):
+                    if m.get("name") and m.get("name") not in models:
+                        models.append(m.get("name"))
+        except Exception:
+            pass
+
+        try:
+            client = self.get_client()
+            res = await client.get(f"{self.base_url}/models", timeout=2.0)
+            if res.status_code == 200:
+                for m in res.json().get("data", []):
+                    if m.get("id") and m.get("id") not in models:
+                        models.append(m.get("id"))
+        except Exception:
+            pass
+
+        return models
 
     async def _resolve_ollama_model(self) -> Optional[str]:
         """Dynamically detect installed models in local Ollama instance."""

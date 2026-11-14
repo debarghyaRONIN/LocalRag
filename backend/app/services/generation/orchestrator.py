@@ -49,6 +49,7 @@ class RAGOrchestrator:
         chat_history: Optional[List[dict]] = None,
         user_clearance: Optional[int] = None,
         user_departments: Optional[List[str]] = None,
+        model: Optional[str] = None,
     ) -> QueryResponse:
         """Non-streaming query execution with RBAC clearance filtering."""
         t_total_start = time.perf_counter()
@@ -86,7 +87,7 @@ class RAGOrchestrator:
 
         # Generate
         t_gen_start = time.perf_counter()
-        answer = await self.llm_client.complete_chat(messages)
+        answer = await self.llm_client.complete_chat(messages, model=model)
         latency_ms["generation_ms"] = (time.perf_counter() - t_gen_start) * 1000
         latency_ms["total_ms"] = (time.perf_counter() - t_total_start) * 1000
 
@@ -96,7 +97,7 @@ class RAGOrchestrator:
             citations=citations,
             retrieved_chunks_count=len(candidates),
             latency_ms=latency_ms,
-            model_used=self.llm_client.model,
+            model_used=model or self.llm_client.model,
         )
 
     async def stream_query(
@@ -107,6 +108,7 @@ class RAGOrchestrator:
         chat_history: Optional[List[dict]] = None,
         user_clearance: Optional[int] = None,
         user_departments: Optional[List[str]] = None,
+        model: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
         """
         Streaming query execution emitting SSE data events:
@@ -147,7 +149,7 @@ class RAGOrchestrator:
         t_gen_start = time.perf_counter()
         first_token = True
 
-        async for token in self.llm_client.stream_chat(messages):
+        async for token in self.llm_client.stream_chat(messages, model=model):
             if first_token:
                 ttft_ms = (time.perf_counter() - t_gen_start) * 1000
                 latency_ms["ttft_ms"] = ttft_ms

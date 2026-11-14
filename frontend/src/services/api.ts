@@ -95,6 +95,18 @@ export async function getHardwareInfo(): Promise<HardwareInfo> {
   return res.json();
 }
 
+export async function getAvailableModels(): Promise<{ active_model: string; available_models: string[] }> {
+  try {
+    const res = await fetch(`${API_BASE}/inference/models`);
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.warn('Failed to fetch available models:', err);
+  }
+  return { active_model: 'Qwen/Qwen2.5-3B-Instruct', available_models: [] };
+}
+
 export async function getDocuments(): Promise<DocumentItem[]> {
   const res = await fetch(`${API_BASE}/documents`);
   if (!res.ok) throw new Error('Failed to fetch documents');
@@ -230,6 +242,7 @@ export interface StreamQueryParams {
   minRerankScore?: number;
   userClearance?: number;
   userDepartments?: string[];
+  model?: string;
   signal?: AbortSignal;
   onToken: (token: string) => void;
   onCitations: (citations: Citation[]) => void;
@@ -245,6 +258,7 @@ export async function streamQuery({
   minRerankScore = 0.20,
   userClearance,
   userDepartments,
+  model,
   signal,
   onToken,
   onCitations,
@@ -266,6 +280,7 @@ export async function streamQuery({
         min_rerank_score: minRerankScore,
         user_clearance: userClearance,
         user_departments: userDepartments,
+        model: model,
         stream: true,
       }),
     });

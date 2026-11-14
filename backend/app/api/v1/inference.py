@@ -70,6 +70,20 @@ async def get_inference_status():
     return await inference_manager.get_system_status()
 
 
+@router.get("/models")
+async def list_available_models():
+    """
+    List detected local models available for inference across Ollama and vLLM.
+    """
+    from backend.app.services.generation.llm_client import VLLMClient
+    client = VLLMClient()
+    models = await client.get_available_models()
+    return {
+        "active_model": client.model,
+        "available_models": models,
+    }
+
+
 @router.get("/compatibility")
 async def check_model_compatibility(model: Optional[str] = Query(None, description="Hugging Face model ID to verify")):
     """

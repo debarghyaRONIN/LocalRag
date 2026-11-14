@@ -63,6 +63,7 @@ async def query_documents(
             chat_history=history,
             user_clearance=payload.user_clearance,
             user_departments=payload.user_departments,
+            model=payload.model,
         )
     response.session_id = payload.session_id
 
@@ -126,6 +127,7 @@ async def stream_query_documents(
         chat_history=history,
         user_clearance=payload.user_clearance,
         user_departments=payload.user_departments,
+        model=payload.model,
     )
 
     async def event_generator_with_persistence():
@@ -148,7 +150,7 @@ async def stream_query_documents(
                     action="query_stream",
                     query_hash=q_hash,
                     exposed_chunk_ids=exp_ids,
-                    model_used=settings.VLLM_MODEL,
+                    model_used=payload.model or settings.VLLM_MODEL,
                     latency_ms=latency_accumulated,
                 )
             except Exception as e:
