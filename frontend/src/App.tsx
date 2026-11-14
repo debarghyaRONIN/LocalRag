@@ -112,7 +112,7 @@ export const App: React.FC = () => {
         return null;
       });
     } catch {
-      setBackendError('Local runtime not detected at http://localhost:8000. Start backend to execute queries.');
+      setBackendError('Initializing local sovereign backend at http://127.0.0.1:8000... Connecting...');
     }
   };
 
@@ -390,14 +390,16 @@ export const App: React.FC = () => {
       onError: (err) => {
         setIsStreaming(false);
         abortControllerRef.current = null;
+        const isFetchError = err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'));
+        const friendlyMessage = isFetchError
+          ? 'Local sovereign backend is initializing at http://127.0.0.1:8000. Please wait a moment while the runtime completes startup, then click Retry.'
+          : `Runtime fault: ${err.message}. Verify that local LLM inference server is accepting connections.`;
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantMsgId
               ? {
                   ...m,
-                  content:
-                    accumulatedText ||
-                    `Runtime fault: ${err.message}. Verify that local LLM inference server is accepting connections.`,
+                  content: accumulatedText || friendlyMessage,
                   isStreaming: false,
                 }
               : m

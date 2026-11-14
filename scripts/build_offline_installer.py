@@ -177,18 +177,48 @@ def assemble_app_payload():
     print("  [+] Configured 100% offline airgap environment (.env)")
 
     # 9. Standalone Native Windows Backend Runtime (Zero Docker / Zero External Python dependency)
-    backend_runtime_src = REPO_ROOT / "test_dist" / "sealed-backend"
+    backend_runtime_src = REPO_ROOT / "dist_backend" / "sealed-backend"
     if not backend_runtime_src.exists():
+        backend_runtime_src = REPO_ROOT / "test_dist" / "sealed-backend"
+
+    if not backend_runtime_src.exists() or not (backend_runtime_src / "sealed-backend.exe").exists():
+        print("  [*] Standalone backend runtime not found in cache. Compiling via PyInstaller...")
+        conda_pi = Path(os.environ.get("USERPROFILE", "")) / "miniconda3" / "envs" / "ragapp" / "Scripts" / "pyinstaller.exe"
+        pi_cmd = str(conda_pi) if conda_pi.exists() else (shutil.which("pyinstaller.exe") or shutil.which("pyinstaller"))
+        if not pi_cmd:
+            raise RuntimeError("PyInstaller executable not detected. Cannot produce standalone offline installer.")
+
+        cmd = [
+            pi_cmd,
+            "--name", "sealed-backend",
+            "--onedir",
+            "--distpath", str(REPO_ROOT / "dist_backend"),
+            "--workpath", str(REPO_ROOT / "build_temp"),
+            "--clean",
+            "--noconfirm",
+            "--log-level", "WARN",
+            "--hidden-import", "aiosqlite",
+            "--hidden-import", "sqlalchemy.dialects.sqlite.aiosqlite",
+            "--hidden-import", "sqlite3",
+            "--collect-all", "uvicorn",
+            "--collect-all", "aiosqlite",
+            "--collect-all", "fastapi",
+            "--collect-all", "starlette",
+            str(REPO_ROOT / "backend" / "desktop_launcher.py"),
+        ]
+        res = subprocess.run(cmd, cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=360)
+        if res.returncode != 0:
+            print(f"  [!] PyInstaller build stderr: {res.stderr}")
+            raise RuntimeError(f"PyInstaller build failed with return code {res.returncode}")
         backend_runtime_src = REPO_ROOT / "dist_backend" / "sealed-backend"
 
-    if backend_runtime_src.exists():
-        dest_backend_runtime = APP_PAYLOAD_DIR / "sealed-backend"
-        if dest_backend_runtime.exists():
-            shutil.rmtree(dest_backend_runtime, ignore_errors=True)
-        shutil.copytree(backend_runtime_src, dest_backend_runtime)
-        print("  [+] Bundled native Windows standalone backend runtime into sealed-backend/ (Zero Docker dependency)")
-    else:
-        print("  [!] Warning: Standalone backend runtime not found in test_dist/sealed-backend")
+    dest_backend_runtime = APP_PAYLOAD_DIR / "sealed-backend"
+    if dest_backend_runtime.exists():
+        shutil.rmtree(dest_backend_runtime, ignore_errors=True)
+    shutil.copytree(backend_runtime_src, dest_backend_runtime)
+    if not (dest_backend_runtime / "sealed-backend.exe").exists():
+        raise FileNotFoundError(f"Missing sealed-backend.exe in {dest_backend_runtime}")
+    print("  [+] Bundled verified native Windows standalone backend runtime into sealed-backend/ (Zero Docker dependency)")
 
 
 def generate_inno_setup_script() -> Path:
@@ -232,6 +262,9 @@ def generate_inno_setup_script() -> Path:
         "",
         "[Dirs]",
         'Name: "{app}\\data"; Permissions: users-modify',
+        'Name: "{app}\\data\\uploads"; Permissions: users-modify',
+        'Name: "{app}\\data\\qdrant_storage"; Permissions: users-modify',
+        'Name: "{app}\\models"; Permissions: users-modify',
         "",
         "[Files]",
         'Source: "app\\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs',

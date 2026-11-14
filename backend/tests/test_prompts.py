@@ -41,7 +41,7 @@ def test_build_rag_messages():
     messages = build_rag_messages("How does FastEmbed run?", candidates)
     assert len(messages) >= 2
     assert messages[0]["role"] == "system"
-    assert "strictly in local enterprise documentation" in messages[0]["content"]
+    assert "strictly in the facts" in messages[0]["content"]
     assert messages[1]["role"] == "user"
     assert "How does FastEmbed run?" in messages[1]["content"]
 

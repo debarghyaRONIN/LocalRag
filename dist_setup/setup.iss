@@ -32,6 +32,9 @@ Name: "lockdownfirewall"; Description: "Enforce Host Air-Gap Lockdown (Block all
 
 [Dirs]
 Name: "{app}\data"; Permissions: users-modify
+Name: "{app}\data\uploads"; Permissions: users-modify
+Name: "{app}\data\qdrant_storage"; Permissions: users-modify
+Name: "{app}\models"; Permissions: users-modify
 
 [Files]
 Source: "app\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs

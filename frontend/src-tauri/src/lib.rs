@@ -104,12 +104,17 @@ fn launch_backend() -> Option<Child> {
             }
 
             match cmd.spawn() {
-                Ok(child) => {
+                Ok(mut child) => {
                     println!("[Sealed Tauri] Spawned standalone backend (PID: {}). Awaiting health...", child.id());
-                    for _ in 0..40 {
+                    // Allow up to 35 seconds (140 * 250ms) for cold boot / Defender verification on virgin machines
+                    for _ in 0..140 {
                         if is_backend_alive() {
                             println!("[Sealed Tauri] Standalone backend is alive and verified on 127.0.0.1:8000");
                             return Some(child);
+                        }
+                        if let Ok(Some(status)) = child.try_wait() {
+                            eprintln!("[Sealed Tauri] Standalone backend exited prematurely with status: {:?}", status);
+                            break;
                         }
                         std::thread::sleep(Duration::from_millis(250));
                     }
@@ -196,12 +201,16 @@ fn launch_backend() -> Option<Child> {
         }
 
         match cmd.spawn() {
-            Ok(child) => {
+            Ok(mut child) => {
                 println!("[Sealed Tauri] Spawned host Python sidecar (PID: {}). Awaiting health...", child.id());
-                for _ in 0..40 {
+                for _ in 0..80 {
                     if is_backend_alive() {
                         println!("[Sealed Tauri] Host backend is alive and verified on 127.0.0.1:8000");
                         return Some(child);
+                    }
+                    if let Ok(Some(status)) = child.try_wait() {
+                        eprintln!("[Sealed Tauri] Host Python backend exited prematurely with status: {:?}", status);
+                        break;
                     }
                     std::thread::sleep(Duration::from_millis(250));
                 }

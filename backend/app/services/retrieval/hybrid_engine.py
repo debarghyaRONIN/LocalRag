@@ -51,19 +51,28 @@ class HybridRetrievalEngine:
 
         # Stage 1: Dense Embedding
         t0 = time.perf_counter()
-        query_vector = self.embedder.embed_query(query)
+        query_vector = []
+        try:
+            query_vector = self.embedder.embed_query(query)
+        except Exception as e:
+            logger.warning(f"Dense query embedding failed: {e}")
         latencies["embed_ms"] = (time.perf_counter() - t0) * 1000
 
         # Stage 2A: Dense Vector Retrieval (Qdrant)
         t1 = time.perf_counter()
-        dense_hits = self.vector_store.search_dense(
-            query_vector=query_vector,
-            top_k=settings.RETRIEVAL_TOP_K,
-            doc_id=doc_id,
-            user_clearance=user_clearance,
-            user_departments=user_departments,
-            user_department=user_department,
-        )
+        dense_hits = []
+        if query_vector:
+            try:
+                dense_hits = self.vector_store.search_dense(
+                    query_vector=query_vector,
+                    top_k=settings.RETRIEVAL_TOP_K,
+                    doc_id=doc_id,
+                    user_clearance=user_clearance,
+                    user_departments=user_departments,
+                    user_department=user_department,
+                )
+            except Exception as e:
+                logger.warning(f"Dense vector search failed: {e}")
 
         # Stage 2B: Full-Text BM25 Lexical Retrieval (SQLite FTS5)
         sparse_hits = self.fts_store.search_bm25(

@@ -60,6 +60,7 @@ frontend/out/
 
 # Build & Standalone Distribution Artifacts
 dist_desktop/
+dist_backend/
 airgap_bundle/
 dist_setup/*.exe
 dist_setup/app/

@@ -23,12 +23,29 @@ import urllib.request
 import urllib.error
 from pathlib import Path
 from typing import Optional, Tuple
+from logging.handlers import RotatingFileHandler
 
-# Configure logging
+# Configure robust dual logging (stdout + persistent file for diagnostic support)
+log_handlers = [logging.StreamHandler(sys.stdout)]
+try:
+    log_dir = None
+    if "SEALED_DATA_DIR" in os.environ and Path(os.environ["SEALED_DATA_DIR"]).exists():
+        log_dir = Path(os.environ["SEALED_DATA_DIR"]) / "logs"
+    elif "LOCALAPPDATA" in os.environ:
+        log_dir = Path(os.environ["LOCALAPPDATA"]) / "Sealed Sovereign Enclave" / "logs"
+    else:
+        log_dir = Path.home() / ".sealed_sovereign" / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    file_h = RotatingFileHandler(str(log_dir / "backend.log"), maxBytes=5 * 1024 * 1024, backupCount=2, encoding="utf-8")
+    log_handlers.append(file_h)
+except Exception:
+    pass
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     datefmt="%H:%M:%S",
+    handlers=log_handlers,
 )
 logger = logging.getLogger("ragapp.desktop")
 
@@ -75,7 +92,12 @@ def is_parent_alive(pid: int) -> bool:
             PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
             handle = ctypes.windll.kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, False, pid)
             if not handle:
-                return False
+                err = ctypes.windll.kernel32.GetLastError()
+                # 5 = ERROR_ACCESS_DENIED (process exists and is running under higher/different integrity level)
+                # If we cannot query parent due to permissions or virtualization, assume it is ALIVE.
+                if err == 5:
+                    return True
+                return True
             res = ctypes.windll.kernel32.WaitForSingleObject(handle, 0)
             ctypes.windll.kernel32.CloseHandle(handle)
             # 258 is WAIT_TIMEOUT, indicating the process is still running
@@ -140,6 +162,7 @@ def is_port_in_use(port: int, host: str = "127.0.0.1") -> bool:
     """Checks whether a TCP port is currently occupied or unavailable for binding."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind((host, port))
             return False
         except OSError:
@@ -321,10 +344,18 @@ def run_desktop_app(
     """
     Main orchestration loop for the desktop runner.
     """
-    port = preferred_port if exact_port else find_available_port(preferred_port, host=host)
-    if exact_port and is_port_in_use(port, host=host):
-        logger.error("Port %d is already in use and --exact-port was specified.", port)
-        return 1
+    port = preferred_port
+    if exact_port:
+        # Give previous process up to 10s to release port if transitioning
+        deadline = time.time() + 10.0
+        while is_port_in_use(port, host=host) and time.time() < deadline:
+            logger.info("Waiting for port %d to be released by previous instance...", port)
+            time.sleep(0.5)
+        if is_port_in_use(port, host=host):
+            logger.error("Port %d is already in use and --exact-port was specified.", port)
+            return 1
+    else:
+        port = find_available_port(preferred_port, host=host)
 
     server = DesktopServer(host=host, port=port)
     server.start()

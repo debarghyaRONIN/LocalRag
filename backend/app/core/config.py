@@ -72,6 +72,7 @@ class Settings(BaseSettings):
     # Air-Gap Hardening & Offline Storage
     AIRGAP_MODE: bool = True
     LOCAL_MODELS_DIR: Path = BASE_DIR / "models"
+    FASTEMBED_CACHE_DIR: Path = BASE_DIR / "models" / "fastembed_cache"
     OFFLINE_LLM_DIR: Path = BASE_DIR / "models" / "llm"
     OFFLINE_EMBEDDING_DIR: Path = BASE_DIR / "models" / "embeddings"
     OFFLINE_RERANKER_DIR: Path = BASE_DIR / "models" / "reranker"
