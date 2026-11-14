@@ -92,16 +92,15 @@ def is_parent_alive(pid: int) -> bool:
             PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
             handle = ctypes.windll.kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, False, pid)
             if not handle:
-                err = ctypes.windll.kernel32.GetLastError()
-                # 5 = ERROR_ACCESS_DENIED (process exists and is running under higher/different integrity level)
-                # If we cannot query parent due to permissions or virtualization, assume it is ALIVE.
-                if err == 5:
-                    return True
                 return True
-            res = ctypes.windll.kernel32.WaitForSingleObject(handle, 0)
-            ctypes.windll.kernel32.CloseHandle(handle)
-            # 258 is WAIT_TIMEOUT, indicating the process is still running
-            return res == 258
+            try:
+                res = ctypes.windll.kernel32.WaitForSingleObject(handle, 0)
+                # WAIT_OBJECT_0 = 0 means process has terminated
+                if res == 0:
+                    return False
+                return True
+            finally:
+                ctypes.windll.kernel32.CloseHandle(handle)
         except Exception:
             return True
     else:
@@ -382,12 +381,17 @@ def run_desktop_app(
     if headless:
         logger.info("Running in headless mode. Server listening at %s. Press Ctrl+C to terminate.", app_url)
         parent_pid = os.getppid()
+        consecutive_dead = 0
         try:
             while server.is_running:
                 time.sleep(0.5)
                 if parent_pid > 1 and not is_parent_alive(parent_pid):
-                    logger.info("Parent process (PID %d) terminated. Shutting down server...", parent_pid)
-                    break
+                    consecutive_dead += 1
+                    if consecutive_dead >= 4:
+                        logger.info("Parent process (PID %d) terminated. Shutting down server...", parent_pid)
+                        break
+                else:
+                    consecutive_dead = 0
         except KeyboardInterrupt:
             logger.info("Interrupted by user. Exiting...")
         finally:
