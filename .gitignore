@@ -1,0 +1,76 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+.env
+.venv
+
+# Data & Storage
+data/
+qdrant_storage/
+*.db
+*.sqlite
+*.sqlite3
+uploads/
+models/
+
+# Logs & Traces
+*.log
+.phoenix/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/dist/
+frontend/out/
+
+# Build & Standalone Distribution Artifacts
+dist_desktop/
+airgap_bundle/
+dist_setup/*.exe
+dist_setup/app/
+dist_setup/package_manifest.json
+test_dist/
+test_build/
+build/
+*.exe
+*.dll
+*.pyd
+*.toc
+*.spec
+*.pkg
+

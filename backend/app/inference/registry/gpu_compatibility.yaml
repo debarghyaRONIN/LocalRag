@@ -1,0 +1,69 @@
+version: "1.0"
+
+nvidia_profiles:
+  "RTX 3060":
+    architecture: "Ampere"
+    min_vram_mb: 12000
+    recommended_vram_util: 0.70
+    max_model_len: 8192
+    enforce_eager: true
+    recommended_models:
+      - "Qwen/Qwen2.5-3B-Instruct"
+      - "Qwen/Qwen2.5-7B-Instruct-AWQ"
+
+  "RTX 4090":
+    architecture: "Ada Lovelace"
+    min_vram_mb: 24000
+    recommended_vram_util: 0.85
+    max_model_len: 16384
+    enforce_eager: false
+    recommended_models:
+      - "Qwen/Qwen2.5-7B-Instruct"
+      - "Qwen/Qwen2.5-14B-Instruct-AWQ"
+
+  "A100/H100":
+    architecture: "Ampere/Hopper"
+    min_vram_mb: 80000
+    recommended_vram_util: 0.90
+    max_model_len: 32768
+    enforce_eager: false
+    recommended_models:
+      - "Qwen/Qwen2.5-32B-Instruct"
+      - "Qwen/Qwen2.5-72B-Instruct-AWQ"
+
+amd_profiles:
+  "Radeon RX 7900 XTX":
+    architecture: "RDNA 3"
+    compute_target: "gfx1100"
+    hsa_override: "11.0.0"
+    min_vram_mb: 24000
+    recommended_vram_util: 0.80
+    max_model_len: 16384
+    enforce_eager: true
+    recommended_models:
+      - "Qwen/Qwen2.5-7B-Instruct"
+      - "Qwen/Qwen2.5-14B-Instruct-AWQ"
+
+  "Radeon RX 6800/6900":
+    architecture: "RDNA 2"
+    compute_target: "gfx1030"
+    hsa_override: "10.3.0"
+    min_vram_mb: 16000
+    recommended_vram_util: 0.75
+    max_model_len: 8192
+    enforce_eager: true
+    recommended_models:
+      - "Qwen/Qwen2.5-3B-Instruct"
+      - "Qwen/Qwen2.5-7B-Instruct-AWQ"
+
+  "Instinct MI250X/MI300X":
+    architecture: "CDNA 2/3"
+    compute_target: "gfx90a/gfx942"
+    min_vram_mb: 64000
+    recommended_vram_util: 0.90
+    max_model_len: 32768
+    enforce_eager: false
+    recommended_models:
+      - "Qwen/Qwen2.5-32B-Instruct"
+      - "Qwen/Qwen2.5-72B-Instruct"
+

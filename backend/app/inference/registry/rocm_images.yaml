@@ -1,0 +1,39 @@
+version: "1.0"
+runtime: "rocm"
+
+default_image: "vllm/vllm-openai:rocm"
+
+images:
+  stable:
+    tag: "rocm/vllm:rocm6.2_py3.10_vllm_0.6.2"
+    rocm_base: "6.2"
+    min_kernel: "5.15"
+    architectures:
+      - "CDNA 3"
+      - "CDNA 2"
+      - "CDNA 1"
+      - "RDNA 3"
+      - "RDNA 2"
+
+  latest:
+    tag: "vllm/vllm-openai:rocm"
+    rocm_base: "6.2"
+    architectures:
+      - "CDNA 3"
+      - "CDNA 2"
+      - "RDNA 3"
+
+container_config:
+  ipc_mode: "host"
+  shm_size: "16g"
+  devices:
+    - "/dev/kfd"
+    - "/dev/dri"
+  group_add:
+    - "video"
+    - "render"
+  security_opt:
+    - "seccomp=unconfined"
+  host_port: 8001
+  container_port: 8000
+

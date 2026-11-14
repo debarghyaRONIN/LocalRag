@@ -1,0 +1,47 @@
+version: "1.0"
+
+models:
+  "Qwen/Qwen2.5-3B-Instruct":
+    family: "qwen2.5"
+    parameters: "3B"
+    quantization: "none"
+    min_vram_mb: 6000
+    recommended_vram_mb: 8000
+    context_window: 32768
+    default_max_len: 8192
+    supports_cuda: true
+    supports_rocm: true
+
+  "Qwen/Qwen2.5-7B-Instruct-AWQ":
+    family: "qwen2.5"
+    parameters: "7B"
+    quantization: "awq"
+    min_vram_mb: 8000
+    recommended_vram_mb: 10000
+    context_window: 32768
+    default_max_len: 8192
+    supports_cuda: true
+    supports_rocm: true
+
+  "Qwen/Qwen2.5-7B-Instruct":
+    family: "qwen2.5"
+    parameters: "7B"
+    quantization: "none"
+    min_vram_mb: 14000
+    recommended_vram_mb: 16000
+    context_window: 32768
+    default_max_len: 8192
+    supports_cuda: true
+    supports_rocm: true
+
+  "meta-llama/Llama-3.1-8B-Instruct-AWQ":
+    family: "llama3.1"
+    parameters: "8B"
+    quantization: "awq"
+    min_vram_mb: 9000
+    recommended_vram_mb: 12000
+    context_window: 131072
+    default_max_len: 8192
+    supports_cuda: true
+    supports_rocm: true
+

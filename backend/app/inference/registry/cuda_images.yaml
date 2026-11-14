@@ -1,0 +1,37 @@
+version: "1.0"
+runtime: "cuda"
+
+default_image: "vllm/vllm-openai:latest"
+
+images:
+  stable:
+    tag: "vllm/vllm-openai:v0.6.3.post1"
+    cuda_base: "12.4"
+    min_driver: "535.86.10"
+    architectures:
+      - "Ampere"
+      - "Ada Lovelace"
+      - "Hopper"
+      - "Turing"
+      - "Volta"
+
+  latest:
+    tag: "vllm/vllm-openai:latest"
+    cuda_base: "12.6"
+    min_driver: "550.54.14"
+    architectures:
+      - "Blackwell"
+      - "Hopper"
+      - "Ada Lovelace"
+      - "Ampere"
+
+container_config:
+  runtime: "nvidia"
+  ipc_mode: "host"
+  restart_policy: "unless-stopped"
+  healthcheck_endpoint: "/health"
+  default_port: 8000
+  host_port: 8001
+  reservations:
+    capabilities: ["gpu"]
+

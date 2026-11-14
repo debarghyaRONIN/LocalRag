@@ -1,0 +1,40 @@
+# =====================================================================
+# All-In-One Sealed Sovereign Enclave
+# Runs Frontend SPA + FastAPI Backend + vLLM CUDA in a single container
+# =====================================================================
+services:
+  sealed:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sealed-app:latest
+    container_name: sealed-sovereign-enclave
+    restart: unless-stopped
+    ports:
+      - "3000:3000"   # Dedicated Frontend Web Application UI
+      - "5173:5173"   # Vite Compatibility UI Port
+      - "8000:8000"   # Complete Web Application (Frontend SPA + Backend APIs)
+      - "8001:8001"   # Dedicated vLLM Inference API Endpoint
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      - PORT=8000
+      - VLLM_PORT=8001
+      - VLLM_MODEL=Qwen/Qwen2.5-3B-Instruct
+      - GPU_MEMORY_UTILIZATION=0.65
+      - MAX_MODEL_LEN=8192
+      - HF_TOKEN=${HF_TOKEN:-}
+    volumes:
+      - sealed_data:/app/data
+      - ragapp_huggingface_data:/root/.cache/huggingface
+
+volumes:
+  sealed_data:
+  ragapp_huggingface_data:
+    external: true

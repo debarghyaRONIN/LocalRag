@@ -1,0 +1,35 @@
+# Core Framework & Async
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.9.0
+pydantic-settings>=2.6.0
+sse-starlette>=2.1.3
+python-multipart>=0.0.12
+httpx>=0.27.2
+
+# Database & Storage
+qdrant-client>=1.12.0
+sqlalchemy[asyncio]>=2.0.36
+greenlet>=3.0.0
+aiosqlite>=0.20.0
+
+# Ingestion & Parsing
+pymupdf>=1.24.11
+python-docx>=1.1.2
+openpyxl>=3.1.5
+python-pptx>=1.0.2
+rapidocr-onnxruntime>=1.4.0
+pyyaml>=6.0.0
+Pillow>=10.0.0
+
+# Local ONNX Embeddings & Reranking
+# fastembed runs quantized ONNX models (bge-m3, bge-reranker-large, etc.) with minimal CPU/GPU memory footprint
+fastembed>=0.4.1
+
+# Observability & Metrics
+prometheus-client>=0.21.0
+psutil>=5.9.0
+
+# Testing & Evaluation
+pytest>=8.3.0
+pytest-asyncio>=0.24.0
