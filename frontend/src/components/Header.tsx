@@ -23,7 +23,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenModelSelector,
   clearanceLevel = 4,
   onChangeClearance,
-  operatorName = 'Dana Ruiz',
+  operatorName = 'Operator',
   stationId = 'WORKSTATION-01',
   nodeMode = 'localhost',
 }) => {

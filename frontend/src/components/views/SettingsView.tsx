@@ -15,7 +15,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import type { AppSettings, HardwareInfo } from '../../types';
-import { getSavedSettings, saveSettings, DEFAULT_SETTINGS, getAvailableModels } from '../../services/api';
+import { getSavedSettings, saveSettings, DEFAULT_SETTINGS, getAvailableModels, testInferenceEndpoint } from '../../services/api';
 
 interface SettingsViewProps {
   hardware?: HardwareInfo | null;
@@ -43,18 +43,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setTestStatus(null);
     try {
       const target = (settings.inference_base_url || 'http://localhost:8001/v1').replace(/\/$/, '');
-      const res = await fetch(`${target}/models`, {
-        signal: AbortSignal.timeout(3000),
-      });
-      if (res.ok) {
-        const data = await res.json().catch(() => ({}));
-        const modelList = data.data?.map((m: any) => m.id).join(', ') || settings.active_model_name;
-        setTestStatus({ ok: true, message: `Connected! Model(s): ${modelList}` });
-      } else {
-        setTestStatus({ ok: false, message: `HTTP ${res.status}: Server returned error status.` });
+      const result = await testInferenceEndpoint(target, settings.inference_provider);
+      setTestStatus({ ok: result.ok, message: result.message });
+      if (result.models && result.models.length > 0) {
+        setDetectedModels(result.models);
+        // If current active model is default and detected models exist, auto-select the first one
+        if (result.models[0] && (!settings.active_model_name || settings.active_model_name === 'qwen2.5:3b' || settings.active_model_name === 'Qwen/Qwen2.5-3B-Instruct')) {
+          if (!result.models.includes(settings.active_model_name)) {
+            handleChange('active_model_name', result.models[0]);
+          }
+        }
       }
     } catch (e: any) {
-      setTestStatus({ ok: false, message: `Could not reach ${settings.inference_base_url}. Ensure local engine is running.` });
+      setTestStatus({
+        ok: false,
+        message: e.message || `Could not reach ${settings.inference_base_url}. Ensure local engine is running.`,
+      });
     } finally {
       setIsTesting(false);
     }
@@ -573,7 +577,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="text"
                 value={settings.operator_name}
                 onChange={(e) => handleChange('operator_name', e.target.value)}
-                placeholder="Dana Ruiz"
+                placeholder="Operator"
                 className="w-full bg-surface-base border border-surface-border rounded px-3 py-1.5 text-xs font-mono text-ink-primary focus:outline-none focus:border-ink-faint"
               />
             </div>

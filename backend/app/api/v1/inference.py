@@ -11,6 +11,82 @@ class StartInferenceRequest(BaseModel):
     model_name: Optional[str] = None
 
 
+class TestEndpointRequest(BaseModel):
+    endpoint_url: str
+    provider: Optional[str] = "custom"
+
+
+@router.post("/test-endpoint")
+async def test_inference_endpoint(req: TestEndpointRequest):
+    """
+    Test connectivity to a local or LAN inference endpoint from the backend (avoiding browser CORS).
+    """
+    import httpx
+    target = req.endpoint_url.strip().rstrip("/")
+    if not target:
+        raise HTTPException(status_code=400, detail="Endpoint URL cannot be empty.")
+
+    detected_models = []
+
+    async with httpx.AsyncClient(timeout=3.5) as client:
+        # First attempt: target/models (OpenAI / vLLM / Ollama v1 endpoint)
+        try:
+            r = await client.get(f"{target}/models")
+            if r.status_code == 200:
+                data = r.json()
+                detected_models = [m.get("id") for m in data.get("data", []) if m.get("id")]
+                return {
+                    "ok": True,
+                    "status_code": 200,
+                    "models": detected_models,
+                    "message": f"Connected! Detected {len(detected_models)} model(s): {', '.join(detected_models[:5])}" if detected_models else "Connected to endpoint successfully."
+                }
+        except Exception:
+            pass
+
+        # Second attempt: If Ollama, try base URL without /v1 + /api/tags
+        if "11434" in target or req.provider == "ollama":
+            base_ollama = target.replace("/v1", "")
+            try:
+                r = await client.get(f"{base_ollama}/api/tags")
+                if r.status_code == 200:
+                    data = r.json()
+                    detected_models = [m.get("name") for m in data.get("models", []) if m.get("name")]
+                    return {
+                        "ok": True,
+                        "status_code": 200,
+                        "models": detected_models,
+                        "message": f"Connected to Ollama! Available models: {', '.join(detected_models)}" if detected_models else "Connected to Ollama! (No models pulled yet - run 'ollama run llama3.2' to download a model)."
+                    }
+            except Exception:
+                pass
+
+        # Third attempt: root probe
+        try:
+            r = await client.get(target)
+            if r.status_code < 500:
+                return {
+                    "ok": True,
+                    "status_code": r.status_code,
+                    "models": [],
+                    "message": f"Endpoint reachable (HTTP {r.status_code})."
+                }
+        except Exception as e:
+            return {
+                "ok": False,
+                "status_code": 0,
+                "models": [],
+                "message": f"Could not connect to {target}: {type(e).__name__}. Ensure your local engine is running."
+            }
+
+    return {
+        "ok": False,
+        "status_code": 404,
+        "models": [],
+        "message": f"Endpoint {target} was reached but did not return a valid models catalog."
+    }
+
+
 @router.get("/hardware")
 async def get_hardware_info(refresh: bool = Query(False, description="Force re-scan of hardware devices")):
     """

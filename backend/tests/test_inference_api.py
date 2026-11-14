@@ -37,3 +37,17 @@ async def test_compatibility_endpoint():
         data = response.json()
         assert "compatible" in data
 
+
+@pytest.mark.asyncio
+async def test_test_endpoint_api():
+    """Verify /api/v1/inference/test-endpoint validates connectivity."""
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/inference/test-endpoint",
+            json={"endpoint_url": "http://127.0.0.1:9999/v1", "provider": "custom"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "ok" in data
+        assert data["ok"] is False
+

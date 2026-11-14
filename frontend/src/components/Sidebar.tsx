@@ -12,6 +12,8 @@ interface SidebarProps {
   onDeleteSession: (sessionId: string) => void;
   documentCount?: number;
   activeJobCount?: number;
+  operatorName?: string;
+  clearanceLevel?: number;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -24,6 +26,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onDeleteSession,
   documentCount = 0,
   activeJobCount = 0,
+  operatorName = 'Operator',
+  clearanceLevel = 4,
 }) => {
   const navItems = [
     { id: 'chat' as ActiveView, label: 'Chat', meta: '' },
@@ -196,7 +200,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           Offline · 0 egress
         </span>
         <span style={{ fontSize: '11.5px', color: 'color-mix(in srgb, var(--color-text) 50%, transparent)' }}>
-          Dana Ruiz · admin (L4)
+          {operatorName} · {clearanceLevel >= 4 ? 'admin' : 'operator'} (L{clearanceLevel})
         </span>
       </div>
     </aside>

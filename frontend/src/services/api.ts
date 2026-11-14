@@ -107,6 +107,22 @@ export async function getAvailableModels(): Promise<{ active_model: string; avai
   return { active_model: 'Qwen/Qwen2.5-3B-Instruct', available_models: [] };
 }
 
+export async function testInferenceEndpoint(
+  endpoint_url: string,
+  provider: string = 'custom'
+): Promise<{ ok: boolean; status_code: number; models: string[]; message: string }> {
+  const res = await fetch(`${API_BASE}/inference/test-endpoint`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ endpoint_url, provider }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Inference test request failed');
+  }
+  return res.json();
+}
+
 export async function getDocuments(): Promise<DocumentItem[]> {
   const res = await fetch(`${API_BASE}/documents`);
   if (!res.ok) throw new Error('Failed to fetch documents');
@@ -435,7 +451,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   inference_provider: 'vllm',
   inference_base_url: 'http://localhost:8001/v1',
   active_model_name: 'Qwen/Qwen2.5-3B-Instruct',
-  operator_name: 'Dana Ruiz',
+  operator_name: 'Operator',
   station_id: 'WORKSTATION-01',
   airgap_strict_mode: true,
   allowed_lan_subnets: '127.0.0.1/32, 192.168.0.0/16, 10.0.0.0/8',

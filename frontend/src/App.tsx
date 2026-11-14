@@ -51,7 +51,7 @@ export const App: React.FC = () => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [indexingJobs, setIndexingJobs] = useState<IndexingJob[]>([]);
   const [appSettings, setAppSettings] = useState<AppSettings>(getSavedSettings);
-  const userName = appSettings.operator_name || 'Dana Ruiz';
+  const userName = appSettings.operator_name || 'Operator';
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -441,6 +441,8 @@ export const App: React.FC = () => {
         onDeleteSession={handleDeleteSession}
         documentCount={documents.length}
         activeJobCount={indexingJobs.filter((j) => j.status === 'running').length}
+        operatorName={userName}
+        clearanceLevel={userClearance}
       />
 
       {/* Main Content Area */}
